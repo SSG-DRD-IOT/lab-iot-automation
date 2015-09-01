@@ -1,0 +1,13 @@
+{
+    "mqtt" : {
+        "uri" : "mqtt://localhost"
+    },
+
+    "mongodb" : {
+        "uri" : "mongodb://localhost/iotdemo-test"
+    },
+
+    "debug" : {
+        "level" : "false"
+    }
+}

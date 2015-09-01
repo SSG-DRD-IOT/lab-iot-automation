@@ -1,0 +1,23 @@
+{
+    "mqtt" : {
+        "uri" : "mqtt://localhost"
+    },
+
+    "mongodb" : {
+        "uri" : "mongodb://localhost/iotdemo"
+    },
+
+    "debug" : {
+       "level" : {
+           "console" : "error",
+           "file" : "trace"
+       }
+    },
+
+    "threshold" : {
+        "temp_high" : 27,
+        "temp_low" : 20,
+        "sound" : 40,
+        "light" : 700
+    }
+}
