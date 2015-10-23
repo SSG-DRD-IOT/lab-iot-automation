@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "http-request": "^0.7.0",
-    "intel-commerical-iot-database-models": "^1.0.9",
+    "intel-commerical-iot-database-models": "latest",
     "lodash": "^3.10.1",
     "mongoose": "^4.1.1",
     "mqtt": "^1.3.2",

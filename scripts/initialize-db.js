@@ -34,11 +34,11 @@ db.once('open', function (callback) {
 });
 
 // Import the Database Model Objects
-//var DataModel = require('intel-commerical-iot-database-models').DataModel;
-//var SensorCloudModel = require('intel-commerical-iot-database-models').SensorCloudModel;
-var TriggerModel = require('intel-commerical-iot-database-models').TriggerModel;
-var SensorModel = require('intel-commerical-iot-database-models').SensorModel;
-var ActuatorModel = require('intel-commerical-iot-database-models').ActuatorModel;
+//var DataModel = require('intel-commerical-edge-network-database-models').DataModel;
+//var SensorCloudModel = require('intel-commerical-edge-network-database-models').SensorCloudModel;
+var TriggerModel = require('intel-commerical-edge-network-database-models').TriggerModel;
+var SensorModel = require('intel-commerical-edge-network-database-models').SensorModel;
+var ActuatorModel = require('intel-commerical-edge-network-database-models').ActuatorModel;
 
 var actuators = [
     {
@@ -92,12 +92,18 @@ var sensors = [
 
 var triggers = [
     {
+        id : "temperature_changed",
+        name : "temperature_changed",
+        sensor_id : "temperature",
+        condition :  "( function(sensor_value) { return this.temperature_changed_condition(sensor_value) } )",
+        triggerFunc: "( function() { this.temperature_changed(); })",
+        active: true
+    },
+    {
         id : "temperature_greater_than_27",
         name : "temperature_greater_than_27",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
-        condition :  "( function(temperature) { return this.temperature_greater_than_27_condition(temperature) } )",
+        condition :  "( function(sensor_value) { return this.temperature_greater_than_27_condition(sensor_value) } )",
         triggerFunc: "( function() { this.temperature_too_hot(); })",
         active: true
     },
@@ -106,8 +112,6 @@ var triggers = [
         id : "temperature_greater_than_27_light_on",
         name : "temperature_greater_than_27_light_on",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
         condition :  "( function(temperature) { return this.temperature_greater_than_27_light_on_condition(temperature) } )",
         triggerFunc: "( function() { this.temperature_heating_error(); } )",
         active: true
@@ -116,8 +120,6 @@ var triggers = [
         id : "temperature_less_than_20_fan_on",
         name : "temperature_less_than_20_fan_on",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
         condition :  "( function(temperature) { return this.temperature_less_than_20_fan_on_condition(temperature); } )",
         triggerFunc: "( function() { this.temperature_cooling_error(); })",
         active: true
@@ -127,8 +129,6 @@ var triggers = [
         id : "temperature_greater_than_27_fan_off",
         name : "temperature_greater_than_27_fan_off",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
         condition :  "( function(temperature) { return this.temperature_greater_than_27_fan_off_condition(temperature) } )",
         triggerFunc: "( function() { this.temperature_heating_error(); } )",
         active: true
@@ -137,8 +137,6 @@ var triggers = [
         id : "temperature_less_than_20_light_off",
         name : "temperature_less_than_20_light_off",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
         condition :  "( function(temperature) { return this.temperature_less_than_20_light_off_condition(temperature); } )",
         triggerFunc: "( function() { this.temperature_cooling_error(); })",
         active: true
@@ -148,8 +146,6 @@ var triggers = [
         id : "temperature_less_than_20",
         name : "temperature_less_than_20",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
         condition : "( function(temperature) { return this.temperature_less_than_20_condition(temperature); } )",
         triggerFunc : "( function() { this.temperature_too_cold(); } )",
         active: true
@@ -159,8 +155,6 @@ var triggers = [
         id : "temperature_ok",
         name : "temperature_ok",
         sensor_id : "temperature",
-        actuator_id : "fan",
-        validator_id : "sound",
         condition :  "( function(temperature) { return this.temperature_ok_condition(temperature); } )",
         triggerFunc: "( function() { this.temperature_ok(); } )",
         active: true
