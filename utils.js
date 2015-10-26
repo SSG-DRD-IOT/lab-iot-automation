@@ -58,7 +58,7 @@ module.exports = {
     },
 
     isRefreshTopic: function(str) {
-        return str.match(/trigger\/refresh/);
+        return str.match(/triggers\/refresh/);
     }
 
 };

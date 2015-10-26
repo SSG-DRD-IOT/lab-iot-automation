@@ -9,7 +9,7 @@
 
     "debug" : {
        "level" : {
-           "console" : "error",
+          "console" : "trace",
            "file" : "trace"
        }
     },
