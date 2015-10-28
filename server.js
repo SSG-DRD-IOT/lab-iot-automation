@@ -30,6 +30,10 @@ var http = require('request-promise');
 var _ = require("lodash"); //Library needed for data paring work.
 var config = require("./config.json"); //Configuration information
 
+// Connect to the MQTT server
+var mqttClient  = mqtt.connect(config.mqtt.uri);
+
+
 var sound_threshold = config.threshold.sound;
 var light_threshold = config.threshold.light;
 var temp_high_threshold = config.threshold.temp_high;
@@ -60,10 +64,9 @@ var context = {
     stash : [],
 
     http: http
-};
 
-// Connect to the MQTT server
-var mqttClient  = mqtt.connect(config.mqtt.uri);
+    mqttClient: mqttClient
+};
 
 // Connect to the MongoDB server
 mongoose.connect(config.mongodb.uri);
