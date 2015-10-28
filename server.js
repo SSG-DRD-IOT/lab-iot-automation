@@ -33,7 +33,6 @@ var config = require("./config.json"); //Configuration information
 // Connect to the MQTT server
 var mqttClient  = mqtt.connect(config.mqtt.uri);
 
-
 var sound_threshold = config.threshold.sound;
 var light_threshold = config.threshold.light;
 var temp_high_threshold = config.threshold.temp_high;
@@ -63,7 +62,7 @@ var context = {
     // to the conditions and functions
     stash : [],
 
-    http: http
+    http: http,
 
     mqttClient: mqttClient
 };
