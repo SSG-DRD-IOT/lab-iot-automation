@@ -26,7 +26,7 @@
 // conditions as needed.
 var mqtt = require('mqtt');
 var mongoose = require('mongoose');
-var http = require('http-request');
+var http = require('request-promise');
 var _ = require("lodash"); //Library needed for data paring work.
 var config = require("./config.json"); //Configuration information
 
@@ -57,7 +57,9 @@ var context = {
 
     // Holds the last value of each sensor and makes the value available
     // to the conditions and functions
-    stash : []
+    stash : [],
+
+    http: http
 };
 
 // Connect to the MQTT server
@@ -142,29 +144,213 @@ var processSensorData = function(json) {
 
         // Check if the triggers predicate evaluates to true
         function(trigger) {
-            if (trigger.eval_condition(context, value)) {
-                logger.info("Trigger Fired: " + trigger.name);
-                trigger.eval_triggerFunc(context);
+
+            // If a trigger is malformatted then log the error
+            try {
+                if (trigger.eval_condition(context, value)) {
+                    logger.info("Trigger Fired: " + trigger.name + " with value " + value);
+                    trigger.eval_triggerFunc(context, value);
+                }
+            } catch (err) {
+                logger.error(err);
             }
         });
+
+    // After the trigger is run the value used becomes the previous value
+    context.stash[sensor_id+"_prev"] = value;
 };
 
 
 context.temperature_changed_condition = function(temperature) {
-    return this.stash["temperature"] != temperature;
+//    console.log("Current/Previous Temperature: " + temperature + ":" + this.stash["temperature_prev"]);
+//    console.log(temperature != this.stash["temperature_prev"] );
+    return this.stash["temperature"] != this.stash["temperature_prev"];
+};
+
+context.temperature_changed = function(temperature) {
+    var temp = parseInt(temperature).toPrecision(3);
+//    console.log(temp);
+
+    var options = {
+        method: 'POST',
+        uri: 'http://192.168.1.118:3000/lcd/text?lcdtext=' + temp + " Celsius"};
+
+    http(options)
+        .then(function (body) {
+          //  console.log("Changed temperature on LCD");
+        })
+        .catch(function (err) {
+          //  console.log(err);
+        });
+
 };
 
 context.too_hot_condition = function(temperature) {
-    return temperature > temp_high_threshold;
+    return temperature > temp_high_threshold
+        && this.stash["temperature_prev"] <= temp_high_threshold;
+};
+
+context.temperature_too_hot = function() {
+    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Hot\"}' );
+
+    var options = {
+        method: 'POST',
+        uri: 'http://192.168.1.118:3000/lcd/backlight?r=255&g=0&b=0'};
+
+    http(options)
+        .then(function (body) {
+         //   console.log("Set LCD Backlight to RED");
+        })
+        .catch(function (err) {
+         //   console.log(err);
+        });
+
+
+    var options2 = {
+        method: 'POST',
+        uri: 'http://192.168.1.101:3000/relay/power'
+    };
+
+    http(options2)
+        .then(function (body) {
+         //   console.log("Mini-Fridge turned on");
+        })
+        .catch(function (err) {
+           // console.log(err);
+        });
+
+    // Turn off heat lamp
+    var options3 = {
+        method: 'DELETE',
+        uri: 'http://192.168.1.113:3000/relay/power'
+    };
+
+    http(options3)
+        .then(function (body) {
+           // console.log("Heat Lamp Turned Off");
+        })
+        .catch(function (err) {
+           // console.log(err);
+        });
 };
 
 context.too_cold_condition = function (temperature) {
-    return temperature < temp_low_threshold;
+    return temperature < temp_low_threshold
+        && this.stash["temperature_prev"] >= temp_low_threshold;
+};
+
+context.temperature_too_cold = function() {
+   // mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Cold\"}' );
+
+    var options = {
+        method: 'POST',
+        uri: 'http://192.168.1.118:3000/lcd/backlight?r=0&g=0&b=255'};
+
+    http(options)
+        .then(function (body) {
+          //  console.log("Set LCD Backlight to Blue");
+        })
+        .catch(function (err) {
+            //console.log(err);
+        });
+
+
+    // Turn on Heat Lamp
+    var options2 = {
+        method: 'POST',
+        uri: 'http://192.168.1.113:3000/relay/power'
+    };
+
+    http(options2)
+        .then(function (body) {
+            //console.log("Heat Lamp turned On");
+        })
+        .catch(function (err) {
+            //console.log(err);
+        });
+
+    // Turn off mini-fridge
+    var options3 = {
+        method: 'DELETE',
+        uri: 'http://192.168.1.101:3000/relay/power'
+    };
+
+    http(options3)
+        .then(function (body) {
+           // console.log("Mini-Fridge Turned Off");
+        })
+        .catch(function (err) {
+           // console.log(err);
+        });
 };
 
 context.temperature_ok_condition = function(temperature) {
-    return temperature > temp_low_threshold && temperature <= temp_high_threshold;
+    return temperature > temp_low_threshold
+        && temperature <= temp_high_threshold
+        && (this.stash["temperature_prev"] <= temp_low_threshold
+            || this.stash["temperature_prev"] > temp_high_threshold);
 };
+
+context.temperature_ok = function() {
+    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Ok\"}' );
+
+    var options = {
+        method: 'POST',
+        uri: 'http://192.168.1.118:3000/lcd/backlight?r=255&g=255&b=255'};
+
+    http(options)
+        .then(function (body) {
+           // console.log("Post Success");
+        })
+        .catch(function (err) {
+            //console.log(err);
+        });
+
+
+    // Turn off heat lamp
+    var options = {
+        method: 'DELETE',
+        uri: 'http://192.168.1.113:3000/relay/power'
+    };
+
+    http(options)
+        .then(function (body) {
+            //console.log("Post Success");
+        })
+        .catch(function (err) {
+            //console.log(err);
+        });
+
+    // Turn off mini-fridge
+    var options2 = {
+        method: 'DELETE',
+        uri: 'http://192.168.1.101:3000/relay/power'
+    };
+
+    http(options2)
+        .then(function (body) {
+            //console.log("Post Success");
+        })
+        .catch(function (err) {
+            //console.log(err);
+        });
+
+    // http.get('http://fanandsound:10010/action?deviceId=fan&action=off', function (err, res) {
+    //     if (err) {
+    //         logger.error("Unable to turn fan off");
+    // 	logger.error(err);
+    //     }
+    // });
+
+
+    // http.get('http://lightandlamp:10010/action?deviceId=light&action=off', function (err, res) {
+    //     if (err) {
+    //         logger.error("Unable to turn light off");
+    // 	logger.error(err);
+    //     }
+    // });
+};
+
 
 context.light_on_condition = function(light) {
     return stash["light"] > light_threshold;
@@ -192,56 +378,6 @@ context.cooling_error_condition = function(temperature) {
         (light_off_condition() && temperature_too_cold());
 };
 
-context.temperature_has_changed = function(temperature) {
-    http.get('192.168.1.118:3000/lcd/text?lcdtext=' + temperature, function (err, res) {
-        if (err) {
-            logger.error("Unable to Post temperature to LCD");
-            logger.error(err);
-        }
-    });
-};
-
-context.temperature_ok = function() {
-    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Ok\"}' );
-
-    // http.get('http://fanandsound:10010/action?deviceId=fan&action=off', function (err, res) {
-    //     if (err) {
-    //         logger.error("Unable to turn fan off");
-    // 	logger.error(err);
-    //     }
-    // });
-
-
-    // http.get('http://lightandlamp:10010/action?deviceId=light&action=off', function (err, res) {
-    //     if (err) {
-    //         logger.error("Unable to turn light off");
-    // 	logger.error(err);
-    //     }
-    // });
-};
-
-context.temperature_too_cold = function() {
-    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Cold\"}' );
-
-    // http.get('http://lightandlamp:10010/action?deviceId=light&action=on', function (err, res) {
-    //     if (err) {
-    //         logger.error("Unable to turn light on");
-    // 	logger.error(err);
-    //     }
-    // });
-};
-
-context.temperature_too_hot = function() {
-    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Hot\"}' );
-
-    // http.get('http://fanandsound:10010/action?deviceId=fan&action=on', function (err, res) {
-    //     if (err) {
-    //         logger.error("Unable to turn fan on");
-    // 	logger.error(err);
-    //     }
-    //     logger.info("Turning fan off");
-    // });
-};
 
 
 context.temperature_cooling_error = function() {
