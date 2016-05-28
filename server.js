@@ -131,6 +131,10 @@ var filter_triggers_by_sensor_id = function(id) {
     return _.filter(context.triggers, {sensor_id : id});
 };
 
+var filter_triggers_by_active= function(id) {
+    return _.filter(context.triggers, {active : true});
+};
+
 var processSensorData = function(json) {
     var sensor_id = json.sensor_id;
     var value = json.value;
@@ -140,18 +144,19 @@ var processSensorData = function(json) {
     context.stash[sensor_id] = value;
 
     _.forEach(
-        filter_triggers_by_sensor_id(
+        filter_triggers_by_active(
+          filter_triggers_by_sensor_id(
             sensor_id
-        ),
+        )),
 
         // Check if the triggers predicate evaluates to true
         function(trigger) {
 
             // If a trigger is malformatted then log the error
             try {
-                if (trigger.eval_condition(context, value)) {
+                if (trigger.eval_condition(context, json)) {
                     logger.info("Trigger Fired: " + trigger.name + " with value " + value);
-                    trigger.eval_triggerFunc(context, value);
+                    trigger.eval_triggerFunc(context, json);
                 }
             } catch (err) {
                 logger.error(err);
@@ -160,197 +165,6 @@ var processSensorData = function(json) {
 
     // After the trigger is run the value used becomes the previous value
     context.stash[sensor_id+"_prev"] = value;
-};
-
-
-context.temperature_changed_condition = function(temperature) {
-//    console.log("Current/Previous Temperature: " + temperature + ":" + this.stash["temperature_prev"]);
-//    console.log(temperature != this.stash["temperature_prev"] );
-    return this.stash["temperature"] != this.stash["temperature_prev"];
-};
-
-context.temperature_changed = function(temperature) {
-    var temp = parseInt(temperature).toPrecision(3);
-//    console.log(temp);
-
-    var options = {
-        method: 'POST',
-        uri: 'http://192.168.1.118:3000/lcd/text?lcdtext=' + temp + " Celsius"};
-
-    http(options)
-        .then(function (body) {
-          //  console.log("Changed temperature on LCD");
-        })
-        .catch(function (err) {
-          //  console.log(err);
-        });
-
-};
-
-context.too_hot_condition = function(temperature) {
-    return temperature > temp_high_threshold
-        && this.stash["temperature_prev"] <= temp_high_threshold;
-};
-
-context.temperature_too_hot = function() {
-    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Hot\"}' );
-
-    var options = {
-        method: 'POST',
-        uri: 'http://192.168.1.118:3000/lcd/backlight?r=255&g=0&b=0'};
-
-    http(options)
-        .then(function (body) {
-         //   console.log("Set LCD Backlight to RED");
-        })
-        .catch(function (err) {
-         //   console.log(err);
-        });
-
-
-    var options2 = {
-        method: 'POST',
-        uri: 'http://192.168.1.101:3000/relay/power'
-    };
-
-    http(options2)
-        .then(function (body) {
-         //   console.log("Mini-Fridge turned on");
-        })
-        .catch(function (err) {
-           // console.log(err);
-        });
-
-    // Turn off heat lamp
-    var options3 = {
-        method: 'DELETE',
-        uri: 'http://192.168.1.113:3000/relay/power'
-    };
-
-    http(options3)
-        .then(function (body) {
-           // console.log("Heat Lamp Turned Off");
-        })
-        .catch(function (err) {
-           // console.log(err);
-        });
-};
-
-context.too_cold_condition = function (temperature) {
-    return temperature < temp_low_threshold
-        && this.stash["temperature_prev"] >= temp_low_threshold;
-};
-
-context.temperature_too_cold = function() {
-   // mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Cold\"}' );
-
-    var options = {
-        method: 'POST',
-        uri: 'http://192.168.1.118:3000/lcd/backlight?r=0&g=0&b=255'};
-
-    http(options)
-        .then(function (body) {
-          //  console.log("Set LCD Backlight to Blue");
-        })
-        .catch(function (err) {
-            //console.log(err);
-        });
-
-
-    // Turn on Heat Lamp
-    var options2 = {
-        method: 'POST',
-        uri: 'http://192.168.1.113:3000/relay/power'
-    };
-
-    http(options2)
-        .then(function (body) {
-            //console.log("Heat Lamp turned On");
-        })
-        .catch(function (err) {
-            //console.log(err);
-        });
-
-    // Turn off mini-fridge
-    var options3 = {
-        method: 'DELETE',
-        uri: 'http://192.168.1.101:3000/relay/power'
-    };
-
-    http(options3)
-        .then(function (body) {
-           // console.log("Mini-Fridge Turned Off");
-        })
-        .catch(function (err) {
-           // console.log(err);
-        });
-};
-
-context.temperature_ok_condition = function(temperature) {
-    return temperature > temp_low_threshold
-        && temperature <= temp_high_threshold
-        && (this.stash["temperature_prev"] <= temp_low_threshold
-            || this.stash["temperature_prev"] > temp_high_threshold);
-};
-
-context.temperature_ok = function() {
-    mqttClient.publish('sensors/temperature/alerts','{\"alert\" : \"Ok\"}' );
-
-    var options = {
-        method: 'POST',
-        uri: 'http://192.168.1.118:3000/lcd/backlight?r=255&g=255&b=255'};
-
-    http(options)
-        .then(function (body) {
-           // console.log("Post Success");
-        })
-        .catch(function (err) {
-            //console.log(err);
-        });
-
-
-    // Turn off heat lamp
-    var options = {
-        method: 'DELETE',
-        uri: 'http://192.168.1.113:3000/relay/power'
-    };
-
-    http(options)
-        .then(function (body) {
-            //console.log("Post Success");
-        })
-        .catch(function (err) {
-            //console.log(err);
-        });
-
-    // Turn off mini-fridge
-    var options2 = {
-        method: 'DELETE',
-        uri: 'http://192.168.1.101:3000/relay/power'
-    };
-
-    http(options2)
-        .then(function (body) {
-            //console.log("Post Success");
-        })
-        .catch(function (err) {
-            //console.log(err);
-        });
-
-    // http.get('http://fanandsound:10010/action?deviceId=fan&action=off', function (err, res) {
-    //     if (err) {
-    //         logger.error("Unable to turn fan off");
-    // 	logger.error(err);
-    //     }
-    // });
-
-
-    // http.get('http://lightandlamp:10010/action?deviceId=light&action=off', function (err, res) {
-    //     if (err) {
-    //         logger.error("Unable to turn light off");
-    // 	logger.error(err);
-    //     }
-    // });
 };
 
 
