@@ -30,30 +30,8 @@ var http = require('request-promise');
 var _ = require("lodash"); //Library needed for data paring work.
 var config = require("./config.json"); //Configuration information
 
-var fs = require('fs');
-var KEY = fs.readFileSync('/etc/mosquitto/certs/server.key');
-var CERT = fs.readFileSync('/etc/mosquitto/certs/server.crt');
-var TRUSTED_CA_LIST = [fs.readFileSync('/etc/mosquitto/ca_certificates/ca.crt')];
-
-var PORT = 8883;
-var HOST = 'localhost';
-
-var options = {
-  port: PORT,
-  host: HOST,
-  protocol: 'mqtts',
-  protocolId: 'MQIsdp',
-  keyPath: KEY,
-  certPath: CERT,
-  rejectUnauthorized : false,
-  //The CA list will be used to determine if server is authorized
-  ca: TRUSTED_CA_LIST,
-  secureProtocol: 'TLSv1_method',
-  protocolVersion: 3
-};
-
 // Connect to the MQTT server
-var mqttClient = mqtt.connect(options);
+var mqttClient  = mqtt.connect(config.mqtt.uri);
 
 var sound_threshold = config.threshold.sound;
 var light_threshold = config.threshold.light;
