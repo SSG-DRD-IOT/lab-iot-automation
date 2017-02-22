@@ -24,23 +24,50 @@
 
 // This daemon listens to all data streams, and checks for particular trigger
 // conditions as needed.
-var mqtt = require('mqtt');
-var mongoose = require('mongoose');
-var http = require('request-promise');
-var _ = require("lodash"); //Library needed for data paring work.
-var config = require("./config.json"); //Configuration information
 
+// Load the application configuration file
+var config = require("./config.json")
+
+// Load NodeJS Library to interact with the filesystem
 var fs = require('fs');
-var KEY = fs.readFileSync('/etc/mosquitto/certs/server.key');
-var CERT = fs.readFileSync('/etc/mosquitto/certs/server.crt');
-var TRUSTED_CA_LIST = [fs.readFileSync('/etc/mosquitto/ca_certificates/ca.crt')];
 
-var PORT = 8883;
-var HOST = 'localhost';
+// A library to colorize console output
+var chalk = require('chalk');
 
+// Require MQTT and setup the connection to the broker
+var mqtt = require('mqtt');
+
+// Require the MongoDB libraries and connect to the database
+var mongoose = require('mongoose');
+
+// A modern JavaScript utility library delivering modularity, performance & extras.
+var _ = require("lodash");
+
+// A simplified HTTP request client with Promise support.
+// The request-promise library will be passed to the context Object
+// and made available in the triggers.
+var http = require('request-promise');
+
+
+// Write startup message to the console
+console.log(chalk.bold.yellow("Automation server is starting"));
+
+
+// Read in the server key and cert and the CA certs
+try {
+  var KEY = fs.readFileSync(config.tls.serverKey);
+  var CERT = fs.readFileSync(config.tls.serverCrt);
+  var TRUSTED_CA_LIST = [fs.readFileSync(config.tls.ca_certificates)];
+} catch (err) {
+  console.error(chalk.bold.red("Unable to find the TLS certs. Please see the first section of the security lab for instructions on creating TLS keys and certificates"))
+  console.error(err)
+  process.exit()
+}
+
+// options - an object to initialize the TLS connection settings
 var options = {
-  port: PORT,
-  host: HOST,
+  port: config.tls.port,
+  host: config.tls.host,
   protocol: 'mqtts',
   protocolId: 'MQIsdp',
   keyPath: KEY,
@@ -52,30 +79,46 @@ var options = {
   protocolVersion: 3
 };
 
-// Connect to the MQTT server
-var mqttClient = mqtt.connect(options);
 
-var sound_threshold = config.threshold.sound;
-var light_threshold = config.threshold.light;
-var temp_high_threshold = config.threshold.temp_high;
-var temp_low_threshold = config.threshold.temp_low;
+// Connect to the MQTT server
+var mqttClient  = mqtt.connect(options);
+
+// Define function to respond to the 'connect' event
+mqttClient.on('connect', function () {
+    console.log(chalk.bold.yellow("Connected to MQTT server"));
+
+    // Subscribe to the MQTT topics
+    mqttClient.subscribe('announcements');
+    mqttClient.subscribe('sensors/+/data');
+});
+
+// Define function to respond to the 'error' event
+mqttClient.on('error', function () {
+    console.log(chalk.bold.yellow("Unable to connect to MQTT server"));
+    process.exit();
+});
+
+
+// Create a connection to the database
+mongoose.connect(config.mongodb.url);
+var db = mongoose.connection;
+
+// Report database errors to the console
+db.on('error', console.error.bind(console, 'connection error:'));
+
+// Log when a connection is established to the MongoDB server
+db.once('open', function (callback) {
+    console.log(chalk.bold.yellow("Connection to MongoDB successful"));
+});
 
 // Import the Database Model Objects
 var TriggerModel = require('intel-commerical-edge-network-database-models').TriggerModel;
 var ErrorModel = require('intel-commerical-edge-network-database-models').ErrorModel;
 
-// Import the logger
-var logger = require('./logger.js');
 
-// Import the Utilities functions
-var utils = require("./utils.js");
-
-// Set default logging options
-logger.transports.file.level = config.debug.level.file || 'trace';
-logger.transports.console.level = config.debug.level.console || 'trace';
-console.log(logger.transports.console.level);
-logger.info("Trigger Daemon is starting...");
-
+// Context - An object that will be passed into each trigger condition and action
+//           function.  If you want to use a library in your automation rules,
+//           for example MQTT, then put it in the context object.
 var context = {
     // Holds the trigger conditions and
      triggers : [],
@@ -84,79 +127,90 @@ var context = {
     // to the conditions and functions
     stash : [],
 
+    // Make the HTTP request-promise library available in automation rules
     http: http,
 
-    mqttClient: mqttClient
+    // Make the MQTT library available in automation rules
+    mqttClient: mqttClient,
+
+    // Make the Chalk library available in automation rules
+    chalk: chalk
 };
 
-// Connect to the MongoDB server
-mongoose.connect(config.mongodb.uri);
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function (callback) {
-    console.log("Connection to MongoDB successful");
-});
 
-// Fetch the Business Rules from the Database
-logger.info("Getting Triggers from the database");
+// Fetch the Automation Rules from the Database
+console.log(chalk.bold.yellow("Getting Automation Rules from the Database"));
 
-// On Server start, read the triggers from the db and store them
-// the triggers array.
 
+// When the server starts, it should read the triggers from the db and store
+// them the triggers array.
+
+// Define the function that reads automation rules from the database
 var retrieveTriggersFromDB = function() {
-    logger.info("Received a message on the Refresh MQTT topic");
-
     TriggerModel
         .find().
         exec().then(function(triggersDB) {
-            logger.info("Retrieving triggers from db");
             context.triggers = triggersDB;
             _.forEach(context.triggers,
                       function(trigger) {
-                          logger.trace("Retrieved trigger - " + trigger.name);
+                          console.log("Retrieved trigger - " + trigger.name);
                       });
         });
 };
 
+// Reads automation rules from the database once when the server starts
 retrieveTriggersFromDB();
 
 // On the start of a connection, do the following...
 mqttClient.on('connect', function () {
-    logger.info("Connected to MQTT server");
-    mqttClient.subscribe('triggers/refresh');
+    console.log(chalk.bold.yellow("Connected to MQTT server"));
+
+    // MQTT client subscribes to all sensor traffic
     mqttClient.subscribe('sensors/+/data');
 });
 
 // Every time a new message is received, do the following
 mqttClient.on('message', function (topic, message) {
-    logger.trace(topic + ":" + message.toString());
+    console.log(chalk.bold.green(topic + ":" + message.toString()));
     var json;
 
     // Parse incoming JSON and print an error if JSON is bad
     try {
         json = JSON.parse(message);
     } catch(error) {
-        logger.error("Malformated JSON received: " + message);
+        console.log("Malformated JSON received: " + message);
     }
 
-    // Determine which topic Command Dispatcher
-    if (utils.isSensorTopic(topic)) {
-        // Received a message on a Sensor MQTT topic
+    // If a sensor datum arrives on a MQTT topic then process it.
+    if (isSensorTopic(topic)) {
         processSensorData(json);
-    } else if (utils.isRefreshTopic(topic)) {
-        // Received a message on the Refresh MQTT topic
-        retrieveTriggersFromDB();
     }
 });
 
+
+// filter_triggers_by_sensor_id - Takes an array of automation rules and returns
+// and returns an array of automation rules that apply to a particular sensor.
 var filter_triggers_by_sensor_id = function(id) {
     return _.filter(context.triggers, {sensor_id : id});
 };
 
+// filter_triggers_by_active - Takes an array of automation rules and returns
+// and returns an array of automation rules that are set to active.
 var filter_triggers_by_active= function(id) {
     return _.filter(context.triggers, {active : true});
 };
 
+// Predicate to determine if the message is from a sensors/<sensor_id>/data topic
+var isSensorTopic = function(str) {
+    return str.match(/sensors\/[A-Za-z0-9]{0,32}\/data/);
+}
+
+// processSensorData - a function that receives a sensor datum in json format
+// and filters the automation rules by the sensor that the datum came from.
+// It then call the automation rules condition function. If the condition
+// function is TRUE, it call the eval_triggerFunc which performs the automation
+// action. This function also stores the datum in the stash. If the stash had a
+// previous value then it will be overwritten.
 var processSensorData = function(json) {
     var sensor_id = json.sensor_id;
     var value = json.value;
@@ -165,6 +219,9 @@ var processSensorData = function(json) {
     // is sending this incoming sensor data.
     context.stash[sensor_id] = value;
 
+    // Filter the automation filter rules by sensor and whether it is active
+    // then pass each rule to a functions that checks the trigger predicate function
+    // and call the action function if it is TRUE
     _.forEach(
         filter_triggers_by_active(
           filter_triggers_by_sensor_id(
@@ -173,70 +230,18 @@ var processSensorData = function(json) {
 
         // Check if the triggers predicate evaluates to true
         function(trigger) {
-
             // If a trigger is malformatted then log the error
             try {
+                // Pass the context object into the evaluation of condition and action
                 if (trigger.eval_condition(context, json)) {
-                    logger.info("Trigger Fired: " + trigger.name + " with value " + value);
+                    console.log(chalk.bold.yellow("Trigger Fired: ") + chalk.bold.white(trigger.name) + " temperature value is " + value);
                     trigger.eval_triggerFunc(context, json);
                 }
             } catch (err) {
-                logger.error(err);
+                console.log(chalk.bold.red(err));
             }
         });
 
     // After the trigger is run the value used becomes the previous value
     context.stash[sensor_id+"_prev"] = value;
-};
-
-
-context.light_on_condition = function(light) {
-    return stash["light"] > light_threshold;
-};
-
-context.fan_on_condition = function(light) {
-    return stash["sound"] > light_threshold;
-};
-
-context.light_off_condition = function(light) {
-    return stash["light"] <= light_threshold;
-};
-
-context.fan_off_condition = function(light) {
-    return stash["sound"] <= light_threshold;
-};
-
-context.heating_error_condition = function (temperature) {
-    return (light_on_condition() && temperature_too_hot()) ||
-        (fan_off_condition() && temperature_too_hot());
-};
-
-context.cooling_error_condition = function(temperature) {
-    return (fan_on_condition() && temperature_too_cold()) ||
-        (light_off_condition() && temperature_too_cold());
-};
-
-
-
-context.temperature_cooling_error = function() {
-    // The LCD screen status will changed based on this MQTT alert
-    logger.error("Cooling Error");
-    mqttClient.publish('sensors/temperature/errors','{\"alert\" : \"ColdError\"}' );
-
-    var error = new ErrorModel({ type: "ColdError", message: "The lamp has failed to run, and the temperature is too cold"});
-
-    error.save(function(err, sensor) {
-        if (err) { throw(err); }
-    });
-};
-
-context.temperature_heating_error = function() {
-    // The LCD screen status will changed based on this MQTT alert
-    logger.error("Heating Error");
-    mqttClient.publish('sensors/temperature/errors','{\"alert\" : \"HotError\"}' );
-    var error = new ErrorModel({ type: "HotError", message: "The fan has failed to run"});
-
-    error.save(function(err, sensor) {
-        if (err) { throw(err); }
-    });
 };
