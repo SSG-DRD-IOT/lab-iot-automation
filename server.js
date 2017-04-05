@@ -161,14 +161,6 @@ var retrieveTriggersFromDB = function() {
 // Reads automation rules from the database once when the server starts
 retrieveTriggersFromDB();
 
-// On the start of a connection, do the following...
-mqttClient.on('connect', function () {
-    console.log(chalk.bold.yellow("Connected to MQTT server"));
-
-    // MQTT client subscribes to all sensor traffic
-    mqttClient.subscribe('sensors/+/data');
-});
-
 // Every time a new message is received, do the following
 mqttClient.on('message', function (topic, message) {
     console.log(chalk.bold.green(topic + ":" + message.toString()));
