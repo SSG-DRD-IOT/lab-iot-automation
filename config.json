@@ -13,19 +13,5 @@
       "ca_certificates" : "/etc/mosquitto/ca_certificates/ca.crt",
       "host" : "localhost",
       "port" : "8883"
-    },
-
-    "debug" : {
-       "level" : {
-          "console" : "trace",
-           "file" : "trace"
-       }
-    },
-
-    "threshold" : {
-        "temp_high" : 27,
-        "temp_low" : 20,
-        "sound" : 40,
-        "light" : 700
     }
 }
