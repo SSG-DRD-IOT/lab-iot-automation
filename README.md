@@ -383,7 +383,8 @@ You can read more able Promise in an article entitled [JavaScript Promises: Ther
  };
 
  // Reads automation rules from the database once when the server starts
- retrieveTriggersFromDB();```
+ retrieveTriggersFromDB();
+```
 
 
 
@@ -412,7 +413,8 @@ mqttClient.on('message', function (topic, message) {
     if (isSensorTopic(topic)) {
         processSensorData(json);
     }
-});```
+});
+```
 
 
 
@@ -440,7 +442,8 @@ var filter_triggers_by_active= function(id) {
 // Predicate to determine if the message is from a sensors/<sensor_id>/data topic
 var isSensorTopic = function(str) {
     return str.match(/sensors\/[A-Za-z0-9]{0,32}\/data/);
-}</sensor_id> ```
+}
+```
 
 
 
@@ -488,7 +491,8 @@ var processSensorData = function(json) {
 
     // After the trigger is run the value used becomes the previous value
     context.stash[sensor_id+"_prev"] = value;
-};```
+};
+```
 
 
 
