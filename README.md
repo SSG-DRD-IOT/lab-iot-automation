@@ -135,7 +135,8 @@ Next add the dependencies to your project.
 
 ``` sh
 npm install intel-commerical-edge-network-database-models lodash mongoose
-mqtt request request-promise chalk --save```
+mqtt request request-promise chalk --save
+```
 
 Your package.json file's dependencies section should look like this.
 
