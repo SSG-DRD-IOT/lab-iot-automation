@@ -48,7 +48,8 @@ For example in JavaScript a predicate function that tests if the temperature is 
   function( temperature ) {
     return temperature > 27;
   }
-)```
+)
+```
 
 Notice the <span style="font-weight:bold">parathesis</span> that surround this function. These are required for the trigger to run correctly. In JavaScript, these parathesis create a block of executable code called a **closure**. The JavaScript interpreter requires this in order to dynamically evaluate the code.
 
@@ -67,7 +68,8 @@ Write a predicate function that tests if a light sensor has a value less than or
   function( brightness ) {
     return brightness <= 15;
   }
-)```
+)
+```
 
 In our Automation Service, we will also implement the notion of a "stash". The current value will be passed into the function as an argument, but the next most recent value will be stored in the stash. This will allow us to make comparisons between the current value and the previously most recent value.
 
@@ -80,7 +82,8 @@ Write a predicate function that tests of a light sensor has a value greater than
     function( light_temperature ) {
       return (stash["light"] > 15 && stash[“temperature”] >= 27;
     }
-)```
+)
+```
 
 
 
@@ -107,7 +110,8 @@ This is an example of a function that is activated when a predicate function ret
       }
     });
   };
- )```
+ )
+ ```
 
 
 
@@ -146,7 +150,8 @@ Your package.json file's dependencies section should look like this.
   "mqtt": "latest",
   "request": "latest",
   "request-promise": "latest"
-}```
+}
+```
 
 
 
@@ -185,7 +190,8 @@ Use the following configuration to allow us to change the locations of the MQTT 
       "sound":40,
       "light":700
    }
-}```
+}
+```
 
 
 
@@ -259,7 +265,8 @@ var options = {
 };
 
 // Connect to the MQTT server
-var mqttClient  = mqtt.connect(options);```
+var mqttClient  = mqtt.connect(options);
+```
 
 
 
@@ -285,7 +292,8 @@ mqttClient.on('connect', function () {
 mqttClient.on('error', function () {
     console.log(chalk.bold.yellow("Unable to connect to MQTT server"));
     process.exit();
-});```
+});
+```
 
 
 
