@@ -48,10 +48,8 @@ var _ = require("lodash");
 // and made available in the triggers.
 var http = require('request-promise');
 
-
 // Write startup message to the console
 console.log(chalk.bold.yellow("Automation server is starting"));
-
 
 // Read in the server key and cert and the CA certs
 try {
@@ -72,32 +70,30 @@ var options = {
   protocolId: 'MQIsdp',
   keyPath: KEY,
   certPath: CERT,
-  rejectUnauthorized : false,
+  rejectUnauthorized: false,
   //The CA list will be used to determine if server is authorized
   ca: TRUSTED_CA_LIST,
   secureProtocol: 'TLSv1_method',
   protocolVersion: 3
 };
 
-
 // Connect to the MQTT server
-var mqttClient  = mqtt.connect(options);
+var mqttClient = mqtt.connect(options);
 
 // Define function to respond to the 'connect' event
-mqttClient.on('connect', function () {
-    console.log(chalk.bold.yellow("Connected to MQTT server"));
+mqttClient.on('connect', function() {
+  console.log(chalk.bold.yellow("Connected to MQTT server"));
 
-    // Subscribe to the MQTT topics
-    mqttClient.subscribe('announcements');
-    mqttClient.subscribe('sensors/+/data');
+  // Subscribe to the MQTT topics
+  mqttClient.subscribe('announcements');
+  mqttClient.subscribe('sensors/+/data');
 });
 
 // Define function to respond to the 'error' event
-mqttClient.on('error', function () {
-    console.log(chalk.bold.yellow("Unable to connect to MQTT server"));
-    process.exit();
+mqttClient.on('error', function() {
+  console.log(chalk.bold.yellow("Unable to connect to MQTT server"));
+  process.exit();
 });
-
 
 // Create a connection to the database
 mongoose.connect(config.mongodb.url);
@@ -107,102 +103,95 @@ var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 
 // Log when a connection is established to the MongoDB server
-db.once('open', function (callback) {
-    console.log(chalk.bold.yellow("Connection to MongoDB successful"));
+db.once('open', function(callback) {
+  console.log(chalk.bold.yellow("Connection to MongoDB successful"));
 });
 
-// Import the Database Model Objects
-var TriggerModel = require('intel-commerical-edge-network-database-models').TriggerModel;
-var ErrorModel = require('intel-commerical-edge-network-database-models').ErrorModel;
-
+// Import the Database  Objects
+var Trigger = require('intel-commercial-edge-network-database-models').Trigger;
+var Error = require('intel-commercial-edge-network-database-models').Error;
 
 // Context - An object that will be passed into each trigger condition and action
 //           function.  If you want to use a library in your automation rules,
 //           for example MQTT, then put it in the context object.
 var context = {
-    // Holds the trigger conditions and
-     triggers : [],
+  // Holds the trigger conditions and
+  triggers: [],
 
-    // Holds the last value of each sensor and makes the value available
-    // to the conditions and functions
-    stash : [],
+  // Holds the last value of each sensor and makes the value available
+  // to the conditions and functions
+  stash: [],
 
-    // Make the HTTP request-promise library available in automation rules
-    http: http,
+  // Make the HTTP request-promise library available in automation rules
+  http: http,
 
-    // Make the MQTT library available in automation rules
-    mqttClient: mqttClient,
+  // Make the MQTT library available in automation rules
+  mqttClient: mqttClient,
 
-    // Make the Chalk library available in automation rules
-    chalk: chalk
+  // Make the Chalk library available in automation rules
+  chalk: chalk
 };
-
 
 // Fetch the Automation Rules from the Database
 console.log(chalk.bold.yellow("Getting Automation Rules from the Database"));
-
 
 // When the server starts, it should read the triggers from the db and store
 // them the triggers array.
 
 // Define the function that reads automation rules from the database
 var retrieveTriggersFromDB = function() {
-    TriggerModel
-        .find().
-        exec().then(function(triggersDB) {
-            context.triggers = triggersDB;
-            _.forEach(context.triggers,
-                      function(trigger) {
-                          console.log("Retrieved trigger - " + trigger.name);
-                      });
-        });
+  Trigger.find().exec().then(function(triggersDB) {
+    context.triggers = triggersDB;
+    _.forEach(context.triggers, function(trigger) {
+      console.log("Retrieved trigger - " + trigger.name);
+    });
+  });
 };
 
 // Reads automation rules from the database once when the server starts
 retrieveTriggersFromDB();
 
 // On the start of a connection, do the following...
-mqttClient.on('connect', function () {
-    console.log(chalk.bold.yellow("Connected to MQTT server"));
+mqttClient.on('connect', function() {
+  console.log(chalk.bold.yellow("Connected to MQTT server"));
 
-    // MQTT client subscribes to all sensor traffic
-    mqttClient.subscribe('sensors/+/data');
+  // MQTT client subscribes to all sensor traffic
+  mqttClient.subscribe('sensors/+/data');
 });
 
 // Every time a new message is received, do the following
-mqttClient.on('message', function (topic, message) {
-    console.log(chalk.bold.green(topic + ":" + message.toString()));
-    var json;
+mqttClient.on('message', function(topic, message) {
+  console.log(chalk.bold.green(topic + ":" + message.toString()));
+  var json;
 
-    // Parse incoming JSON and print an error if JSON is bad
-    try {
-        json = JSON.parse(message);
-    } catch(error) {
-        console.log("Malformated JSON received: " + message);
-    }
+  // Parse incoming JSON and print an error if JSON is bad
+  try {
+    json = JSON.parse(message);
+  } catch (error) {
+    console.log("Malformated JSON received: " + message);
+  }
 
-    // If a sensor datum arrives on a MQTT topic then process it.
-    if (isSensorTopic(topic)) {
-        processSensorData(json);
-    }
+  // If a sensor datum arrives on a MQTT topic then process it.
+  if (isSensorTopic(topic)) {
+    processSensorData(json);
+  }
 });
-
 
 // filter_triggers_by_sensor_id - Takes an array of automation rules and returns
 // and returns an array of automation rules that apply to a particular sensor.
 var filter_triggers_by_sensor_id = function(id) {
-    return _.filter(context.triggers, {sensor_id : id});
+  return _.filter(context.triggers, {sensor_id: id});
 };
 
 // filter_triggers_by_active - Takes an array of automation rules and returns
 // and returns an array of automation rules that are set to active.
-var filter_triggers_by_active= function(id) {
-    return _.filter(context.triggers, {active : true});
+var filter_triggers_by_active = function(id) {
+  return _.filter(context.triggers, {active: true});
 };
 
 // Predicate to determine if the message is from a sensors/<sensor_id>/data topic
 var isSensorTopic = function(str) {
-    return str.match(/sensors\/[A-Za-z0-9]{0,32}\/data/);
+  return str.match(/sensors\/[A-Za-z0-9]{0,32}\/data/);
 }
 
 // processSensorData - a function that receives a sensor datum in json format
@@ -212,36 +201,32 @@ var isSensorTopic = function(str) {
 // action. This function also stores the datum in the stash. If the stash had a
 // previous value then it will be overwritten.
 var processSensorData = function(json) {
-    var sensor_id = json.sensor_id;
-    var value = json.value;
+  var sensor_id = json.sensor_id;
+  var value = json.value;
 
-    // Loop through all of the triggers for the sensor which
-    // is sending this incoming sensor data.
-    context.stash[sensor_id] = value;
+  // Loop through all of the triggers for the sensor which
+  // is sending this incoming sensor data.
+  context.stash[sensor_id] = value;
 
-    // Filter the automation filter rules by sensor and whether it is active
-    // then pass each rule to a functions that checks the trigger predicate function
-    // and call the action function if it is TRUE
-    _.forEach(
-        filter_triggers_by_active(
-          filter_triggers_by_sensor_id(
-            sensor_id
-        )),
+  // Filter the automation filter rules by sensor and whether it is active
+  // then pass each rule to a functions that checks the trigger predicate function
+  // and call the action function if it is TRUE
+  _.forEach(filter_triggers_by_active(filter_triggers_by_sensor_id(sensor_id)),
 
-        // Check if the triggers predicate evaluates to true
-        function(trigger) {
-            // If a trigger is malformatted then log the error
-            try {
-                // Pass the context object into the evaluation of condition and action
-                if (trigger.eval_condition(context, json)) {
-                    console.log(chalk.bold.yellow("Trigger Fired: ") + chalk.bold.white(trigger.name) + " temperature value is " + value);
-                    trigger.eval_triggerFunc(context, json);
-                }
-            } catch (err) {
-                console.log(chalk.bold.red(err));
-            }
-        });
+  // Check if the triggers predicate evaluates to true
+  function(trigger) {
+    // If a trigger is malformatted then log the error
+    try {
+      // Pass the context object into the evaluation of condition and action
+      if (trigger.eval_condition(context, json)) {
+        console.log(chalk.bold.yellow("Trigger Fired: ") + chalk.bold.white(trigger.name) + " temperature value is " + value);
+        trigger.eval_triggerFunc(context, json);
+      }
+    } catch (err) {
+      console.log(chalk.bold.red(err));
+    }
+  });
 
-    // After the trigger is run the value used becomes the previous value
-    context.stash[sensor_id+"_prev"] = value;
+  // After the trigger is run the value used becomes the previous value
+  context.stash[sensor_id + "_prev"] = value;
 };

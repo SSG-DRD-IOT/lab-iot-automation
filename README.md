@@ -1,6 +1,6 @@
 ### Read the Objectives
 
-![](./images/automation-slide.png)
+![](./images/automation-slide-small.png)
 
 By the end of this module, you should be able to:
 
@@ -10,7 +10,7 @@ By the end of this module, you should be able to:
 
 ### Prerequisites
 
-![](./images/admin.png)
+![](./images/admin-small.png)
 
 Before you can begin this lab, you must ensure that mongod service is running and install the custom administration web application. This web application will allow you to easily create, edit and delete triggers. Creating the trigger service and setting up a couple of triggers is the focus of this lab.
 
@@ -111,6 +111,7 @@ This is an example of a function that is activated when a predicate function ret
     });
   };
  )
+
  ```
 
 
@@ -507,7 +508,7 @@ var processSensorData = function(json) {
 
 ### Run the automation server and verify the Triggers
 
-![](./images/automation_triggers.png)
+![](./images/automation_triggers-small.png)
 
 Before we run the automation server make sure that sensors are publishing the topic **sensors/temperature/data**. As described in earlier labs one way is to run the virtual-sensor.js with --tls option in another SSH terminal of Gateway
 

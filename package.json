@@ -14,7 +14,7 @@
   "author": "Intel",
   "license": "MIT",
   "dependencies": {
-    "intel-commerical-edge-network-database-models": "latest",
+    "intel-commercial-edge-network-database-models": "latest",
     "lodash": "^3.10.1",
     "mongoose": "^4.1.1",
     "mqtt": "^1.3.2",
