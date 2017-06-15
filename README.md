@@ -135,7 +135,7 @@ This lab depends on the following modules add them to your package.json <span cl
 Next add the dependencies to your project.
 
 ``` sh
-npm install intel-commerical-edge-network-database-models lodash mongoose
+npm install intel-commercial-edge-network-database-models lodash mongoose
 mqtt request request-promise chalk --save
 ```
 
@@ -145,7 +145,7 @@ Your package.json file's dependencies section should look like this.
 
 ``` js
 "dependencies": {
-  "intel-commerical-edge-network-database-models": "latest",
+  "intel-commercial-edge-network-database-models": "latest",
   "lodash": "latest",
   "chalk": "latest",
   "mongoose": "latest",
@@ -319,8 +319,8 @@ Next create the code for your MongoDB database connection and create the Trigger
   });
 
   // Import the Database Model Objects
-  var Trigger = require('intel-commerical-edge-network-database-models').Trigger;
-  var Error = require('intel-commerical-edge-network-database-models').Error;
+  var Trigger = require('intel-commercial-edge-network-database-models').Trigger;
+  var Error = require('intel-commercial-edge-network-database-models').Error;
 ```
 
 
