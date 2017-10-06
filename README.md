@@ -1,6 +1,6 @@
-### Read the Objectives
+# Automation
 
-![](./images/automation-slide-small.png)
+## Read the Objectives
 
 By the end of this module, you should be able to:
 
