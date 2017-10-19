@@ -10,6 +10,6 @@
     "serverCrt": "./certs/server.crt",
     "ca_certificates": "./certs/ca.crt",
     "host": "localhost",
-    "port": "8883"
+    "port": "1883"
   }
 }

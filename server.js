@@ -66,7 +66,7 @@ try {
 var options = {
   port: config.tls.port,
   host: config.tls.host,
-  protocol: 'mqtts',
+  protocol: 'mqtt',
   protocolId: 'MQIsdp',
   keyPath: KEY,
   certPath: CERT,
