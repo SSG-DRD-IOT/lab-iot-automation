@@ -10,11 +10,11 @@ By the end of this module, you should be able to:
 
 ### Prerequisites
 
-**Before you can begin this lab, you must ensure that mongod service is running and install the [custom administration web application](https://github.com/SSG-DRD-IOT/lab-admin-interface).** 
+**You must also initialize the database with a couple of sensors and automation rules.** The instructions for this are in the Administration Lab.
 
-**You must also run the [initdb.js](https://github.com/SSG-DRD-IOT/lab-iot-automation/initdb.js) script to create the initial trigger rules in the database.**
-This web application will allow you to easily create, edit and delete triggers. Creating the trigger service and setting up a couple of triggers is the focus of this lab.
+**You must also ensure that the Mongo database service is running and install the [custom administration web application](https://github.com/SSG-DRD-IOT/lab-admin-interface).**
 
+The Sample administration interface looks like this.
 ![](./images/admin-small.png)
 
 ### Read the Introduction
