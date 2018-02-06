@@ -521,9 +521,9 @@ Execute the automation <span class="icon file">server.js</span> that we created
 
 You should start seeing the sensor topic messages from the traces. You should also notice the triggers getting fired for the conditions that we have set as shown in the figure
 
-### Download Automation code from Github
+### Download the Solution to this Lab from Github
 
-If you have not followed the steps given above then you can download automation code directly from github following below steps.
+On your Up2 Board, run the following commands.
 
 `$ git clone https://github.com/SSG-DRD-IOT/lab-automation`  
 `$ cd lab-automation`  
