@@ -10,7 +10,7 @@ By the end of this module, you should be able to:
 
 ### Prerequisites
 
-**You must also initialize the database with a couple of sensors and automation rules.** The instructions for this are in the Administration Lab.
+**You must also initialize the database with a couple of sensors and automation rules.** The instructions for this are in the [Administration Lab](https://github.com/SSG-DRD-IOT/lab-admin-interface).
 
 **You must also ensure that the Mongo database service is running and install the [custom administration web application](https://github.com/SSG-DRD-IOT/lab-admin-interface).**
 
