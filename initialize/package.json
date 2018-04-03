@@ -1,0 +1,16 @@
+{
+  "name": "initialize",
+  "version": "1.0.0",
+  "description": "",
+  "main": "initialize-db.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "intel-commercial-edge-network-database-models": "^1.0.9",
+    "lodash": "^4.11.1",
+    "mongoose": "^4.4.12"
+  }
+}
