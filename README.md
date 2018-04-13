@@ -188,12 +188,6 @@ Use the following configuration to allow us to change the locations of the MQTT 
          "console":"trace",
          "file":"trace"
       }
-   },
-   "threshold":{
-      "temp_high":27,
-      "temp_low":20,
-      "sound":40,
-      "light":700
    }
 }
 ```
