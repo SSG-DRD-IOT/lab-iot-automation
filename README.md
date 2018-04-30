@@ -9,10 +9,11 @@ By the end of this module, you should be able to:
 *   Write your own Automation Service
 
 ### Prerequisites
+* MongoDB should be installed and running on your IoT development board. If not you'll need to download and configure it.
 
-**You must also initialize the database with a couple of sensors and automation rules.** The instructions for this are in the [Administration Lab](https://github.com/SSG-DRD-IOT/lab-admin-interface).
+* **You must also initialize the database with some default sensors and automation rules.** Here is the link to a script to initialize the database. https://github.com/SSG-DRD-IOT/lab-iot-automation/blob/master/initialize/initdb.js. Note that the script runs very quickly, but you will need to press CTRL-C to exit it.
 
-**You must also ensure that the Mongo database service is running and install the [custom administration web application](https://github.com/SSG-DRD-IOT/lab-admin-interface).**
+* You must install an administration interface. This webapp will give you an easy way of editing the automation triggers. The setup instructions are in the [Administration Lab](https://github.com/SSG-DRD-IOT/lab-admin-interface).
 
 The Sample administration interface looks like this.
 ![](./images/admin-small.png)
